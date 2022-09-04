@@ -37,7 +37,17 @@ import arviz as az
 #
 # The line starting with `>` is a comment. Load the letters of the sequence in a `str` variable. The resulting string should have 1273 letters: be sure newlines are not included.
 
-pass
+# +
+sars: str = ''
+
+with open('sars.fasta') as f:
+    for line in f:
+        if not line.startswith('>'):
+            sars += line.strip()
+# -
+
+assert len(sars) == 1273
+
 
 # ### Exercise 2 (max 7 points)
 #
@@ -46,42 +56,79 @@ pass
 #
 # To get the full marks, you should declare correctly the type hints and add tests within a doctest string.
 
-pass
+def n_subseqs(seq: str, n: int) -> dict[str, int]:
+    """Return the count of the sub-sequences of length 𝑛 starting from the first letter.
+    
+    >>> sum(x for x in n_subseqs('X'*7, 2).values()) <= 3
+    True
+    
+    >>> len(n_subseqs(sars, 2))
+    276
+    
+    >>> n_subseqs(sars, 2)['LL']
+    7
+
+    """
+    
+    assert n > 0
+    result: dict[str, int] = {}
+    
+    i = 0
+    while i+n <= len(seq):
+        s = seq[i:i+n]
+        if s in result:
+            result[s] += 1
+        else:
+            result[s] = 1
+        i += n
+    return result
+
 
 # ### Exercise 3 (max 5 points)
 #
 # Plot a pie chart of the occurrences of letters in the SARS-CoV-2 sequence. To get the full marks make good use of the function defined in the previous exercise and put proper labels. 
 
-pass
+# +
+counts = n_subseqs(sars, 1).items()
+
+fig, ax = plt.subplots()
+_ = ax.pie([v for _, v in counts], labels=[k for k, _ in counts], autopct='%.0f%%')
+
+# -
 
 # ### Exercise 4 (max 3 points)
 #
 # Store in a Pandas dataframe the same information depicted by the pie chart of the previous exercise. The dataframe should have three columns: `letter`, `occurrences`, `percentual`.
 
-pass
+sars_df = pd.DataFrame(n_subseqs(sars, 1).items(), columns=['letter', 'occurrences'])
 
+
+sars_df['percentual'] = sars_df['occurrences'] / sars_df['occurrences'].sum()
+
+sars_df
 
 # ### Exercise 5 (max 2 points)
 #
 # Print the letters of SARS-CoV-2 that occur at least 5% of the times.
 
-pass
+sars_df[sars_df['percentual']  >= .05 ][['letter', 'percentual']]
 
 # ### Exercise 6 (max 4 points)
 #
 # Take advantage of the [numpy random choice generator](https://numpy.org/doc/stable/reference/random/generated/numpy.random.Generator.choice.html#numpy.random.Generator.choice) to produce a list of 10000 `str` with length 1273 and composed by the same letters of SARS-CoV-2. Be sure the the process is reproducible (i.e., you are able to get the exactly the same results another time). The process should take less than 10s.
 
 # +
-# %time
+# %%time
 
-pass
+rng = np.random.default_rng(666)
+sars_rng = [''.join(line) for line in rng.choice(list(set(sars)), size=(10000, 1273))]
 # -
 
 # ### Exercise 7 (max 4 points)
 #
 # Count how many strings among the ones produced during the previous exercise have at most the same number (276) of sub-sequences of 2 letters.
 
-pass
+sum([len(n_subseqs(x, 2).keys()) <= 276 for x in sars_rng])
 
 # ### Exercise 8 (max 5 points)
 #
@@ -91,4 +138,7 @@ pass
 #
 
 
-pass
+for i in range(2, 8+1):
+    original = len(n_subseqs(sars, i).keys())
+    rand = sum([len(n_subseqs(x, i).keys()) == original for x in sars_rng])
+    print(f'Sequences of {i} letters: {100*(rand/10000)}%')
